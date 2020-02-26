@@ -25,7 +25,7 @@ import xlrd as xlrd
 import xlwt as xlwt
 
 
-years_to_plot = 7
+years_to_plot = 10
 
 root = tk.Tk()  # For filedialogs
 root.withdraw()  # No root window
@@ -121,6 +121,9 @@ rate_table = [rate_sheet.row_values(rn) for rn in range(rate_sheet.nrows)]
 if verbose:
     print(rate_table)
     print()
+initial_year = rate_table[1][0]
+if verbose:
+    print('initial_year', initial_year)
             
 # if we want numpy array instead....            
 # num_rows = rate_sheet.nrows - 1
@@ -137,8 +140,12 @@ if verbose:
 #     print('inputData', inputData)
 
 total_analysis_period = cl.FinancialParameters.analysis_period
+npv_array = np.zeros(years_to_plot)
+print(npv_array)
+iter_num = -1
 for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
-                                                      years_to_plot)): 
+                                               years_to_plot)): 
+    iter_num  = iter_num + 1 
     print('\nstarting_year: ', starting_year)
     # Manipulate the rate_table to match starting year.
     # Go through the rate table and remove any years prior to starting_year
@@ -235,10 +242,15 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
         if round(npv) != round(npv_single_stage):
             print('\nError:  NPV computed by stages does not equal NPV computed '
               'directly!  NPV directly is: ', npv_single_stage, '\n')
-            
+    npv_array[iter_num] = npv     
     print('NPV: ', npv) 
     print()        
-        
+years = np.arange(initial_year, initial_year + years_to_plot) 
+plt.bar(years, npv_array) 
+plt.title('Net Present Value for Starting Date')
+plt.xlabel('Starting Year')
+plt.ylabel('Net Present Value ($)')
+      
 root = tk.Tk()
 root.withdraw()
 
