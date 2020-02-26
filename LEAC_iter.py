@@ -9,6 +9,12 @@ This script assumes:
     you are using PySAM version 2.02
 You make an excel file with the rates as a function of time:
     Year, 50000 kWh rate, rest rate
+    I notice a 0.5% error higher for split simulation than single
+    when degradation is 0.5%.  This remains unresolved, but it
+    seems consistent and the error is small.
+    Compared to SAM 2020.1.17 beta, the amount of electricity produced
+    is 0.3% lower than the PySAM simulation.  This is unresolved, but
+    it doesn't bother me much, as it is small and consistent.'
 Until the problem is resolved you need to enter the dc_degradation below
 @author: frohro
 """
@@ -25,7 +31,7 @@ import PySAM.PySSC as pssc
 import xlrd as xlrd
 import xlwt as xlwt
 
-dc_degradation = 0.5  # Until I can read it in 
+
 
 root = tk.Tk()  # For filedialogs
 root.withdraw()  # No root window
@@ -63,6 +69,7 @@ cl = Cashloan.from_existing(pv, 'PVWattsCommercial')
 ur.assign(UtilityRate.wrap(ur_dat).export())
 cl.assign(Cashloan.wrap(cl_dat).export())
 
+degradation = cl.SystemOutput.degradation[0]
 if testing:
     pv.execute()
     ur.execute()
@@ -96,7 +103,7 @@ if testing:
 # Get the rate data from the excel spreadsheet.
 try:
     if testing:
-        xl_file_path = 'Rates_Flat.xlsx'
+        xl_file_path = 'Rates.xlsx'
     else:
         xl_file_path = filedialog.askopenfilename(defaultextension='xlxs',
             title='Select the excel file with rate data.',
@@ -150,14 +157,14 @@ for i in range(rate_sheet.nrows-1, 0, -1):  # Ditch the titles.
               ur.ElectricityRates.ur_ec_tou_mat[0][4])
     period = end_year - year
     pv.SystemDesign.system_capacity = starting_system_capacity*\
-        (1 - 0.01*dc_degradation)**(years_old)
+        (1 - 0.01*degradation)**(years_old)
     if verbose:
         print('System_Capacity (kW): ', pv.SystemDesign.system_capacity)
         print('Year: ', year, 'Years Old: ', years_old,'Period: ', period)
     cl.FinancialParameters.analysis_period = period
     cl.FinancialParameters.insurance_rate = \
             starting_insurance_rate / \
-            (1 - 0.01*dc_degradation)**years_old
+            (1 - 0.01*degradation)**years_old
     print('cl.FinancialParameters.insurance_rate', 
           cl.FinancialParameters.insurance_rate)
     pv.execute()

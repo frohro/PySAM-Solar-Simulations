@@ -9,7 +9,6 @@ This script assumes:
     you are using PySAM version 2.02
 You make an excel file with the rates as a function of time:
     Year, 50000 kWh rate, rest rate
-Until the problem is resolved you need to enter the dc_degradation below
 @author: frohro
 """
 
@@ -25,7 +24,7 @@ import PySAM.PySSC as pssc
 import xlrd as xlrd
 import xlwt as xlwt
 
-dc_degradation = 0.5  # Until I can read it in 
+
 years_to_plot = 7
 
 root = tk.Tk()  # For filedialogs
@@ -64,6 +63,9 @@ cl = Cashloan.from_existing(pv, 'PVWattsCommercial')
 ur.assign(UtilityRate.wrap(ur_dat).export())
 cl.assign(Cashloan.wrap(cl_dat).export())
 
+degradation = cl.SystemOutput.degradation[0]
+if verbose:
+    print('degradation', degradation)
 if testing:
     pv.execute()
     ur.execute()
@@ -97,7 +99,7 @@ if testing:
 # Get the rate data from the excel spreadsheet.
 try:
     if testing:
-        xl_file_path = 'Rates_Flat.xlsx'
+        xl_file_path = 'Rates.xlsx'
     else:
         xl_file_path = filedialog.askopenfilename(defaultextension='xlxs',
             title='Select the excel file with rate data.',
@@ -112,7 +114,7 @@ else:
             rate_sheet = wb.sheet_by_name('Rates')
         except:
             print('\nError:  Does you spreadsheet have a \"Rates\" sheet?\n')
-rate_table = [[0]*rate_sheet.ncols]
+
 if verbose:
     print('The rates you have are:')   
 rate_table = [rate_sheet.row_values(rn) for rn in range(rate_sheet.nrows)]
@@ -142,7 +144,7 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
     # Go through the rate table and remove any years prior to starting_year
     # except the last one just before the starting year.  That one change
     # the year to starting_year.
-    for j in range(1, len(rate_table)-1): 
+    for j in range(1, len(rate_table)): 
         if int(rate_table[j][0])  <= starting_year:
                 rate_table[j][0] = starting_year
                 if j > 1:
@@ -186,14 +188,14 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
                   ur.ElectricityRates.ur_ec_tou_mat[0][4])
         period = end_year - year
         pv.SystemDesign.system_capacity = starting_system_capacity*\
-            (1 - 0.01*dc_degradation)**(years_old)
+            (1 - 0.01*degradation)**(years_old)
         if verbose:
             print('System_Capacity (kW): ', pv.SystemDesign.system_capacity)
             print('Year: ', year, 'Years Old: ', years_old,'Period: ', period)
         cl.FinancialParameters.analysis_period = period
         cl.FinancialParameters.insurance_rate = \
                 starting_insurance_rate / \
-                (1 - 0.01*dc_degradation)**years_old
+                (1 - 0.01*degradation)**years_old
         print('cl.FinancialParameters.insurance_rate', 
               cl.FinancialParameters.insurance_rate)
         pv.execute()
@@ -204,7 +206,7 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
         # installed cost.  If that cost goes down, we have a problem.
     
         # net_installed_cost = (cl.Outputs.adjusted_installed_cost\
-        #     - 40000)*(1 - 0.01*dc_degradation)**(years_old) + 40000
+        #     - 40000)*(1 - 0.01*degradation)**(years_old) + 40000
         net_installed_cost = cl.SystemCosts.total_installed_cost
         if i != 1:
             npv = npv + (cl.Outputs.npv + net_installed_cost)/\
