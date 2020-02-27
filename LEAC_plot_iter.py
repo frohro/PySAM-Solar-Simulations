@@ -33,7 +33,7 @@ root.withdraw()  # No root window
 ssc = pssc.PySSC()
 
 testing = True  # Make False if you are not running tests.
-verbose = True  # Make False if you don't want all the debugging info.
+verbose = False  # Make False if you don't want all the debugging info.
 
 
 # Get the SAM json file, make the simulations we need for the commercial
@@ -71,29 +71,37 @@ if testing:
     ur.execute()
     cl.execute()
     npv_single_stage = cl.Outputs.npv
-    if round(pv.Outputs.ac_annual) != 134580:
-        print('\nError: Annual AC Output doesn\'t agree with SAM!\n')
-    if round(cl.Outputs.npv) != 138348:
-        print('Error Net Present Value does\'t agree with SAM!\n')
-    if round(cl.Outputs.adjusted_installed_cost) != 223249:
-        print('Error: Net installed cost doesn\'t agree with SAM!\n')
     if verbose:
-        print('Full analysis for testing with no degradation:')
-        print('Annual AC output: ', pv.Outputs.ac_annual, 
-              ' Should be 134580.')
-        print('ur_ec_tou_mat: ', ur.ElectricityRates.ur_ec_tou_mat, 
-              ' Should 1, 1, 55000, 0.23, 0.08, ...')
-        print('Should be 0.23. ', ur.ElectricityRates.ur_ec_tou_mat[0][4])
-        print('cl.Outputs.npv: ', cl.Outputs.npv, 
-              'Should be $138,348.')
-        print('cl.FinancialParameters.analysis_period: ', 
-              cl.FinancialParameters.analysis_period, ' Should be 25.')
-        print('cl.FinancialParameters.real_discount_rate: ',
-              cl.FinancialParameters.real_discount_rate, ' Shauld be 1.5')
-        print('cl.Outputs.adjusted_installed cost', 
-              cl.Outputs.adjusted_installed_cost, 
-              'Should be $223,249.')  
-        print()
+        if round(pv.Outputs.ac_annual) != 134580:
+            print('\nError: Annual AC Output doesn\'t agree with SAM!\n')
+        if round(cl.Outputs.npv) != 138348:
+            print('Error Net Present Value does\'t agree with SAM!\n')
+        if round(cl.Outputs.adjusted_installed_cost) != 223249:
+            print('Error: Net installed cost doesn\'t agree with SAM!\n')
+        if verbose:
+            print('Full analysis for testing with no degradation:')
+            print('Annual AC output: ', pv.Outputs.ac_annual, 
+                  ' Should be 134580.')
+            print('ur_ec_tou_mat: ', ur.ElectricityRates.ur_ec_tou_mat, 
+                  ' Should 1, 1, 55000, 0.23, 0.08, ...')
+            print('Should be 0.23. ', ur.ElectricityRates.ur_ec_tou_mat[0][4])
+            print('cl.Outputs.npv: ', cl.Outputs.npv, 
+                  'Should be $138,348.')
+            print('cl.FinancialParameters.analysis_period: ', 
+                  cl.FinancialParameters.analysis_period, ' Should be 25.')
+            print('cl.FinancialParameters.real_discount_rate: ',
+                  cl.FinancialParameters.real_discount_rate, ' Should be 1.5')
+            print('cl.Outputs.adjusted_installed cost', 
+                  cl.Outputs.adjusted_installed_cost, 
+                  'Should be $223,249.')
+            print('len(cl.Outputs.cf_operating_expenses): ',
+                      len(cl.Outputs.cf_operating_expenses))
+            print()
+
+    check_payback = cl.Outputs.payback
+    check_discounted_payback = cl.Outputs.discounted_payback
+    if verbose:
+        print('check_payback: ', check_payback)
 
 
 # Get the rate data from the excel spreadsheet.
@@ -125,23 +133,11 @@ initial_year = rate_table[1][0]
 if verbose:
     print('initial_year', initial_year)
             
-# if we want numpy array instead....            
-# num_rows = rate_sheet.nrows - 1
-# num_cells = rate_sheet.ncols - 1
-# curr_row = -1
-# inputData = np.empty([rate_sheet.nrows - 1, rate_sheet.ncols])
-# while curr_row < num_rows: # for each row
-#     curr_row += 1
-#     row = rate_sheet.row(curr_row)
-#     if curr_row > 0: # don't want the first row because those are labels
-#         for col_ind, el in enumerate(row):
-#             inputData[curr_row - 1, col_ind] = el.value           
-# if verbose:
-#     print('inputData', inputData)
-
 total_analysis_period = cl.FinancialParameters.analysis_period
 npv_array = np.zeros(years_to_plot)
-print(npv_array)
+simple_payback_array = np.zeros(years_to_plot)
+if verbose:
+    print(npv_array)
 iter_num = -1
 for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
                                                years_to_plot)): 
@@ -157,9 +153,12 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
                 if j > 1:
                     if int(rate_table[j-1][0]) == int(starting_year):
                         del rate_table[j-1]
+                        break
     if verbose:
         print(rate_table)
     npv = 0.0
+    yearly_savings_tuple = ()
+    discounted_yearly_savings_tuple = ()
     starting_system_capacity = pv.SystemDesign.system_capacity
     starting_insurance_rate = cl.FinancialParameters.insurance_rate
     if verbose:
@@ -167,7 +166,7 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
         print('Total analysis period: ',total_analysis_period) 
         print('rate_table[1][0]', rate_table[1][0])
         print('rate_sheet.cell_value(1, 0) ', rate_sheet.cell_value(1, 0) )
-        year = total_analysis_period + \
+    year = total_analysis_period + \
             rate_table[1][0]  # rate_sheet.cell_value(1, 0)
     end_year = year
     if verbose:
@@ -203,7 +202,8 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
         cl.FinancialParameters.insurance_rate = \
                 starting_insurance_rate / \
                 (1 - 0.01*degradation)**years_old
-        print('cl.FinancialParameters.insurance_rate', 
+        if verbose:
+            print('cl.FinancialParameters.insurance_rate', 
               cl.FinancialParameters.insurance_rate)
         pv.execute()
         ur.execute()
@@ -238,18 +238,105 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
                   cl.SystemCosts.total_installed_cost)
             print()
     
+        installed_cost = cl.Outputs.adjusted_installed_cost
+        if verbose:
+            print('years_old: ', years_old)
+            print('cl.Outputs.cf_energy_value: ', cl.Outputs.cf_energy_value)
+            print('cl.Outputs.cf_operating_expenses: ', 
+                  cl.Outputs.cf_operating_expenses)
+            print('yearly_savings_tuple: ', yearly_savings_tuple)
+        temp_tuple = tuple(np.subtract(cl.Outputs.cf_energy_value,
+                    cl.Outputs.cf_operating_expenses)*\
+                (1 + 0.01*cl.FinancialParameters.inflation_rate)**(years_old))
+        yearly_savings_tuple = temp_tuple + yearly_savings_tuple
+        yearly_savings_tuple = yearly_savings_tuple[1: \
+                                    len(yearly_savings_tuple)]
+        # This installed_cost will be the earliest one (the correct one)
+        # Remove 0.0 from the front of yearly_savings_tuple.
+        # if verbose:
+        #     print('cl.Outputs.cf_energy_value: ', cl.Outputs.cf_energy_value)
+        #     print('cl.Outputs.cf_operating_expenses: ', 
+        #           cl.Outputs.cf_operating_expenses)
+        #     print('len(cl.Outputs.cf_operating_expenses): ',
+        #           len(cl.Outputs.cf_operating_expenses))
+        #     print('yearly_savings_tuple: ', yearly_savings_tuple)
+        #     print('len(yearly_savings_tuple): ', len(yearly_savings_tuple))
+        # yearly_savings_tuple = yearly_savings_tuple[1: \
+        #                         len(yearly_savings_tuple)]
+        # yearly_savings_tuple = tuple(np.subtract(cl.Outputs.cf_energy_value,
+        #             cl.Outputs.cf_operating_expenses)) + yearly_savings_tuple
+        if verbose:
+            print('yearly_savings_tuple: ', yearly_savings_tuple)
+            print('len(yearly_savings_tuple): ', len(yearly_savings_tuple))
+# We need to get rid of the zero in yearly_savings_tuple.
+    #     discounted_yearly_savings_tuple = tuple(np.subtract(\
+    #         cl.Outputs.cf_energy_value,
+    #         cl.Outputs.cf_operating_expenses)/ \
+    # # This cannot work. It raises all values to the years_old.  Fix me!
+    #         (1+0.01*cl.FinancialParameters.real_discount_rate)**years_old) + \
+    #                 discounted_yearly_savings_tuple
+
+    if verbose:
+        print('\nCalculating Simple Payback')
+        print('yearly_savings_tuple: ', yearly_savings_tuple)
+        print('installed_cost: ', installed_cost)
+    years_payback = 0
+    sum_simple_savings = 0 
+    for simple_savings in yearly_savings_tuple:
+            sum_simple_savings = sum_simple_savings + simple_savings
+            if sum_simple_savings < installed_cost:
+                years_payback = years_payback + 1
+            else:
+
+                previous_sum_simple_savings = sum_simple_savings - simple_savings
+                part_year = (installed_cost - previous_sum_simple_savings)\
+                    /simple_savings
+                years_payback = years_payback + part_year
+# Should the above 1 be a 2?
+                break  
+    print('Simple Payback Period (years): ', years_payback)
+    if verbose:
+        print('check_payback: ', check_payback)
+    
+    # discounted_years_payback = 0
+    # sum_discounted_savings = 0 
+    # for discounted_savings in discounted_yearly_savings_tuple:
+    #         sum_discounted_savings = sum_discounted_savings + discounted_savings
+    #         if sum_discounted_savings < installed_cost:
+    #             discounted_years_payback = discounted_years_payback + 1
+    #         else:
+    #             previous_sum_discounted_savings = sum_discounted_savings - \
+    #                 discounted_savings
+    #             part_year = (installed_cost - previous_sum_discounted_savings)\
+    #                 /simple_savings
+    #             discounted_years_payback = discounted_years_payback - 2 + part_year
+    #             # The 2 is because the first element of the tuple is 0.0.
+    #             break  
+    # print('Discounted Payback Period (years): ', discounted_years_payback)
+    # if verbose:
+    #     print('check_discounted_payback: ', check_discounted_payback)
+        
     if testing:
-        if round(npv) != round(npv_single_stage):
-            print('\nError:  NPV computed by stages does not equal NPV computed '
-              'directly!  NPV directly is: ', npv_single_stage, '\n')
-    npv_array[iter_num] = npv     
+        if verbose:
+            if round(npv) != round(npv_single_stage):
+                print('\nError:  NPV computed by stages does not equal NPV computed '
+                  'directly!  NPV directly is: ', npv_single_stage, '\n')
+    npv_array[iter_num] = npv    
     print('NPV: ', npv) 
-    print()        
+    print()  
+    simple_payback_array[iter_num] = years_payback      
 years = np.arange(initial_year, initial_year + years_to_plot) 
+plt.figure(0)
 plt.bar(years, npv_array) 
 plt.title('Net Present Value for Starting Date')
 plt.xlabel('Starting Year')
 plt.ylabel('Net Present Value ($)')
+
+plt.figure(1)
+plt.bar(years, simple_payback_array) 
+plt.title('Simple Payback for Starting Date')
+plt.xlabel('Starting Year')
+plt.ylabel('NSimple Payback (years)')
       
 root = tk.Tk()
 root.withdraw()
