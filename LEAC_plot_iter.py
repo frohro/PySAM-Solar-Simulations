@@ -23,7 +23,22 @@ import PySAM.Cashloan as Cashloan
 import PySAM.PySSC as pssc
 import xlrd as xlrd
 import xlwt as xlwt
+from xlutils.copy import copy as xl_copy
 
+def output(filename, wb, years, NPV, period):
+    new_wb = xl_copy(wb)
+    sheet1 = new_wb.add_sheet('Results')
+    
+    sheet1.write(0, 0, 'Year')
+    sheet1.write(0, 1, 'NPV')
+    sheet1.write(0, 2, 'Payback')
+
+    for i in range(0, len(years)):
+        sheet1.write(i+1, 0, years[i])
+        sheet1.write(i+1, 1, NPV[i])
+        sheet1.write(i+1, 2, period[i])
+        
+    new_wb.save(filename)
 
 years_to_plot = 10
 
@@ -142,7 +157,8 @@ iter_num = -1
 for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
                                                years_to_plot)): 
     iter_num  = iter_num + 1 
-    print('\nstarting_year: ', starting_year)
+    if verbose:
+        print('\nstarting_year: ', starting_year)
     # Manipulate the rate_table to match starting year.
     # Go through the rate table and remove any years prior to starting_year
     # except the last one just before the starting year.  That one change
@@ -328,16 +344,17 @@ for starting_year in range(int(rate_table[1][0]), int(rate_table[1][0] + \
 years = np.arange(initial_year, initial_year + years_to_plot) 
 plt.figure(0)
 plt.bar(years, npv_array) 
-plt.title('Net Present Value for Starting Date')
-plt.xlabel('Starting Year')
+plt.title('Net Present Value for Install Date')
+plt.xlabel('Install Date (Year)')
 plt.ylabel('Net Present Value ($)')
 
 plt.figure(1)
 plt.bar(years, simple_payback_array) 
-plt.title('Simple Payback for Starting Date')
-plt.xlabel('Starting Year')
-plt.ylabel('NSimple Payback (years)')
-      
+plt.title('Simple Payback for Install Date')
+plt.xlabel('Install Date (Year)')
+plt.ylabel('Simple Payback (years)')
+
+output(xl_file_path, wb, years, npv_array, simple_payback_array)    
 root = tk.Tk()
 root.withdraw()
 
