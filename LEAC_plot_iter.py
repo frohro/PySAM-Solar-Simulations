@@ -9,6 +9,9 @@ This script assumes:
     you are using PySAM version 2.02
 You make an excel file with the rates as a function of time:
     Year, 50000 kWh rate, rest rate
+    It will write the output to a new sheet in that file called Results.
+    If you want to run the program again, you need to delete that sheet
+    or make a new rates spreadsheet.
 @author: frohro
 """
 
@@ -16,13 +19,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import messagebox
+import tkinter as tk
 import json
 import PySAM.Pvwattsv7 as PVWattsCommercial
 import PySAM.Utilityrate5 as UtilityRate
 import PySAM.Cashloan as Cashloan
 import PySAM.PySSC as pssc
 import xlrd as xlrd
-import xlwt as xlwt
 from xlutils.copy import copy as xl_copy
 
 def output(filename, wb, years, NPV, period):
@@ -47,7 +51,7 @@ root.withdraw()  # No root window
 
 ssc = pssc.PySSC()
 
-testing = True  # Make False if you are not running tests.
+testing = False  # Make False if you are not running tests.
 verbose = False  # Make False if you don't want all the debugging info.
 
 
@@ -354,7 +358,10 @@ plt.title('Simple Payback for Install Date')
 plt.xlabel('Install Date (Year)')
 plt.ylabel('Simple Payback (years)')
 
-output(xl_file_path, wb, years, npv_array, simple_payback_array)    
+MsgBox = messagebox.askquestion ('eXcel Output',
+        'Do you wish to save results to the eXcel rates file?')
+if MsgBox == 'yes':
+    output(xl_file_path, wb, years, npv_array, simple_payback_array)    
 root = tk.Tk()
 root.withdraw()
 
