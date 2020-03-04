@@ -1,18 +1,84 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+License: MIT   
+@author: Rob Frohne  (Walla Walla University)
+Copyright (c) 2020 Rob Frohne
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 Created on Mon Jan 27 08:50:44 2020
+
+
+VARIABLE LEAC PySAM PVWatts DISTRIBUTED COMMERCIAL SCRIPT:
+
+This is a python script to calculate the NPV and simple payback
+for a PV system where the tariff is not expected to be constant over 
+the lifetime of the system.  It was created for Adventist World Radio
+on Guam, a non-profit Christian shortwave radio station.  On Guam there
+is LEAC (fuel surcharge) that varies depending on the cost of electricity
+generation, so this was necessary.
+
+Because the tariff is changing over time, the NPV varies depending on
+the installation year.  This script plots that data for ten years from
+the starting year in an eXcel file.
+
+There are some other tricky issues dealing with degradation of PV and
+inflation where the initial install costs for intermediate years have
+to be adjusted properly.  It attempts to do these correctly.  If you 
+modify this program for your own use in a different situation, beware
+of this kind of problem.
+
 This script assumes: 
-    you are using PVWatts Commercial.
+    you are doing a PVWatts Distributed Commercial simulation
     you are nonprofit (no taxes or incentives)
-    you are on Guam where the rates are flat as a function of time of day
+    the tariff rates are similar to the GPA tariff rates on Guam
     you are using PySAM version 2.02
-You make an excel file with the rates as a function of time:
-    Year, 50000 kWh rate, rest rate
-    It will write the output to a new sheet in that file called Results.
+    
+Before running this script:
+    Is SAM: 
+        set up your desired pvwatts, distributed, commercial simulation
+        with all the data.
+        Generate code -> JSON for Inputs to export your input data to a
+        JSON file with the same name as your simulation.
+    Make an excel file with the tariff rates as a function of time in the 
+    following format:
+        Year, first few kWh rate, rest rate
+        
+When running this script:
+    You will be asked for the JSON file you saved from SAM with input data.
+    Select the eXcel file with the tariff rate data you made earlier
+    when asked.
+    Upon completion, if selected, the script will write the output to a 
+    new Results sheet in that eXcel file with the rates.
     If you want to run the program again, you need to delete that sheet
     or make a new rates spreadsheet.
-@author: frohro
+    The script creates some plots.  You can change titles, etc. by modifying
+    the script.
+    
+Other notes:
+    You can change the boolean variables "verbose", and "testing" below 
+    to print out a lot more data which is useful when making modifications 
+    to the script.
+    
+
+
 """
 
 import numpy as np
@@ -20,7 +86,6 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
-import tkinter as tk
 import json
 import PySAM.Pvwattsv7 as PVWattsCommercial
 import PySAM.Utilityrate5 as UtilityRate
@@ -129,7 +194,7 @@ try:
         xl_file_path = 'Rates.xlsx'
     else:
         xl_file_path = filedialog.askopenfilename(defaultextension='xlxs',
-            title='Select the excel file with rate data.',
+            title='Select the excel file with tariff rate data.',
             filetypes=[('excel 2007+', '*.xlsx'), ('excel 2003-', '*.xls'),
                            ('All files', '*.*')])
 except NameError:
@@ -357,11 +422,13 @@ plt.bar(years, simple_payback_array)
 plt.title('Simple Payback for Install Date')
 plt.xlabel('Install Date (Year)')
 plt.ylabel('Simple Payback (years)')
+                                                                                                                                                                                                                                                                                                                                                                                                                                             
 
-MsgBox = messagebox.askquestion ('eXcel Output',
-        'Do you wish to save results to the eXcel rates file?')
-if MsgBox == 'yes':
-    output(xl_file_path, wb, years, npv_array, simple_payback_array)    
+if not testing:                                                                                                                                                                                                                                                                                                                       
+    MsgBox = messagebox.askquestion ('eXcel Output'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+            'Do you wish to save results to the eXcel rates file?')
+    if MsgBox == 'yes':
+        output(xl_file_path, wb, years, npv_array, simple_payback_array)    
 root = tk.Tk()
 root.withdraw()
 
