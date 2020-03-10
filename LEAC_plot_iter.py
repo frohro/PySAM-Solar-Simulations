@@ -77,8 +77,6 @@ Other notes:
     to print out a lot more data which is useful when making modifications 
     to the script.
     
-
-
 """
 
 import numpy as np

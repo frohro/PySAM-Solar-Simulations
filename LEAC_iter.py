@@ -38,8 +38,8 @@ root.withdraw()  # No root window
 
 ssc = pssc.PySSC()
 
-testing = True  # Make False if you are not running tests.
-verbose = True  # Make False if you don't want all the debugging info.
+testing = False  # Make False if you are not running tests.
+verbose = False  # Make False if you don't want all the debugging info.
 
 
 # Get the SAM json file, make the simulations we need for the commercial
@@ -143,7 +143,7 @@ if verbose:
     print('Starting system capacity: ', starting_system_capacity)
     print('Total analysis period: ',cl.FinancialParameters.analysis_period) 
     print('rate_sheet.cell_value(1, 0) ', rate_sheet.cell_value(1, 0) )
-    year = cl.FinancialParameters.analysis_period + \
+year = cl.FinancialParameters.analysis_period + \
         rate_sheet.cell_value(1, 0)
 end_year = year
 if verbose:
