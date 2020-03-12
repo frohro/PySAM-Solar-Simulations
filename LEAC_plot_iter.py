@@ -426,12 +426,14 @@ plt.bar(years, npv_array)
 plt.title('Net Present Value for Install Date')
 plt.xlabel('Install Date (Year)')
 plt.ylabel('Net Present Value ($)')
+plt.show()
 
 plt.figure(1)
 plt.bar(years, simple_payback_array) 
 plt.title('Simple Payback for Install Date')
 plt.xlabel('Install Date (Year)')
 plt.ylabel('Simple Payback (years)')
+plt.show()
                                                                                                                                                                                                                                                                                                                                                                                                                                              
 
 if not testing:                                                                                                                                                                                                                                                                                                                       
