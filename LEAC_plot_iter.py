@@ -26,7 +26,8 @@ SOFTWARE.
 Created on Mon Jan 27 08:50:44 2020
 
 
-VARIABLE LEAC PySAM PVWatts DISTRIBUTED COMMERCIAL SCRIPT:
+VARIABLE LEAC PySAM PVWatts DISTRIBUTED COMMERCIAL SCRIPT to plot
+NPV and Simple Payback as a function of install date for the next five years:
 
 This is a python script to calculate the NPV and simple payback
 for a PV system where the tariff is not expected to be constant over 
@@ -76,6 +77,17 @@ Other notes:
     You can change the boolean variables "verbose", and "testing" below 
     to print out a lot more data which is useful when making modifications 
     to the script.
+         ▪ Common problems you might have with the python scripts:
+            • If you have years beyond your simulation period in your 
+            .xlsx file for the rates, you will get the error: “error: 
+            utilityrate5 execution error. fail(analysis_period, positive): 
+                0”
+            • LEAC_iter.py and LEAC_plot_iter.py both assume you exported 
+            JSON from PVWatts simulations, not the more detailed pv 
+            simulation specifying the panels and inverters.  If you try 
+            and use one of those JSON files, you will get the error: 
+                “error: pvwattsv7 execution error. precheck input: variable
+                'array_type' required but not assigned”
     
 """
 
@@ -107,7 +119,7 @@ def output(filename, wb, years, NPV, period):
         
     new_wb.save(filename)
 
-years_to_plot = 10
+years_to_plot = 5
 
 root = tk.Tk()  # For filedialogs
 root.withdraw()  # No root window

@@ -2,6 +2,25 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jan 27 08:50:44 2020
+
+
+This is a python script to calculate the NPV and simple payback
+for a PV system where the tariff is not expected to be constant over 
+the lifetime of the system.  It was created for Adventist World Radio
+on Guam, a non-profit Christian shortwave radio station.  On Guam there
+is LEAC (fuel surcharge) that varies depending on the cost of electricity
+generation, so this was necessary.
+
+Because the tariff is changing over time, the NPV varies depending on
+the installation year.  This script plots that data for ten years from
+the starting year in an eXcel file.
+
+There are some other tricky issues dealing with degradation of PV and
+inflation where the initial install costs for intermediate years have
+to be adjusted properly.  It attempts to do these correctly.  If you 
+modify this program for your own use in a different situation, beware
+of this kind of problem.
+
 This script assumes: 
     you are using PVWatts Commercial.
     you are nonprofit (no taxes or incentives)
@@ -15,12 +34,22 @@ You make an excel file with the rates as a function of time:
     Compared to SAM 2020.1.17 beta, the amount of electricity produced
     is 0.3% lower than the PySAM simulation.  This is unresolved, but
     it doesn't bother me much, as it is small and consistent.'
-Until the problem is resolved you need to enter the dc_degradation below
+   
+        ▪ Common problems you might have with the python scripts:
+            • If you have years beyond your simulation period in your 
+            .xlsx file for the rates, you will get the error: “error: 
+            utilityrate5 execution error. fail(analysis_period, positive): 
+                0”
+            • LEAC_iter.py and LEAC_plot_iter.py both assume you exported 
+            JSON from PVWatts simulations, not the more detailed pv 
+            simulation specifying the panels and inverters.  If you try 
+            and use one of those JSON files, you will get the error: 
+                “error: pvwattsv7 execution error. precheck input: variable
+                'array_type' required but not assigned”
 @author: frohro
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import filedialog
 import json
@@ -29,7 +58,6 @@ import PySAM.Utilityrate5 as UtilityRate
 import PySAM.Cashloan as Cashloan
 import PySAM.PySSC as pssc
 import xlrd as xlrd
-import xlwt as xlwt
 
 
 
@@ -179,7 +207,8 @@ for i in range(rate_sheet.nrows-1, 0, -1):  # Ditch the titles.
     cl.FinancialParameters.insurance_rate = \
             starting_insurance_rate / \
             (1 - 0.01*degradation)**years_old
-    print('cl.FinancialParameters.insurance_rate', 
+    if verbose:
+        print('cl.FinancialParameters.insurance_rate', 
           cl.FinancialParameters.insurance_rate)
     pv.execute()
     ur.execute()
